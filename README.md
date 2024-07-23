@@ -10,7 +10,7 @@ Registration is possible in three options:
 
 ## Install
 
-Install latest: `pip install https://github.com/AMEST/py_simple_container/archive/refs/heads/main.tar.gz`
+Install latest: `pip install https://github.com/AMEST/py_simple_container/archive/refs/heads/master.tar.gz`
 
 ## Builder methods
 
