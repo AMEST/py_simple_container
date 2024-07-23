@@ -14,9 +14,9 @@ class ContainerTest(unittest.TestCase):
         container = Container()
         container.register(ConcreteClass)
 
-        obj : AbstractClass = container.resolve(AbstractClass)
+        actual : AbstractClass = container.resolve(AbstractClass)
 
-        self.assertEqual(type(obj), ConcreteClass)
+        self.assertEqual(type(actual), ConcreteClass)
 
     def test_factory_registration(self):
         class AnotherClass():
@@ -34,9 +34,9 @@ class ContainerTest(unittest.TestCase):
         container.register(AnotherClass)
         container.register(MyClass, factory=my_factory)
 
-        obj : MyClass = container.resolve(MyClass)
+        actual : MyClass = container.resolve(MyClass)
 
-        self.assertTrue(isinstance(obj, MyClass))
+        self.assertTrue(isinstance(actual, MyClass))
 
     def test_instance_registration(self):
         class SomeClass:
@@ -46,9 +46,9 @@ class ContainerTest(unittest.TestCase):
         container = Container()
         container.register(SomeClass, instance=instance)
 
-        obj : SomeClass = container.resolve(SomeClass)
+        actual : SomeClass = container.resolve(SomeClass)
 
-        self.assertEqual(obj, instance)
+        self.assertEqual(actual, instance)
 
     def test_resolve_nested_dependencies(self):
         class DependencyA:
@@ -108,9 +108,16 @@ class ContainerTest(unittest.TestCase):
         container.register(MyClass)
         container.register(ImplementationThree)
 
-        all_implementations = container.resolve_all_implementations(MyInterface)
+        actual = container.resolve_all_implementations(MyInterface)
         
-        self.assertTrue(len(all_implementations), 3)
+        self.assertTrue(len(actual), 3)
+
+    def test_resolve_container(self):
+        container = Container()
+
+        actual = container.resolve(Container)
+
+        self.assertEqual(actual, container)
 
 if __name__ == '__main__':
     unittest.main()

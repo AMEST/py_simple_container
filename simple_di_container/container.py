@@ -4,6 +4,7 @@ class Container(object):
     """ Simple DI Container. Not thread safe. Singleton only lifetime """
     def __init__(self):
         self.registry = {}
+        self.registry[Container] = self
 
     def register(self, cls, factory=None, instance=None) -> None:
         """
