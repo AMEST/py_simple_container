@@ -118,6 +118,3 @@ class ContainerTest(unittest.TestCase):
         actual = container.resolve(Container)
 
         self.assertEqual(actual, container)
-
-if __name__ == '__main__':
-    unittest.main()
