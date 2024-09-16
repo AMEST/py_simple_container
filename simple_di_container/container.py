@@ -35,7 +35,7 @@ class Container(object):
                 if inspect.isfunction(obj):
                     instance = obj(self) if len(inspect.signature(obj).parameters) == 1 else obj()
                 else:
-                    dependencies = self._resolve_dependencies(obj)
+                    dependencies = self._get_dependencies(obj)
                     instance = obj(*dependencies)
                 self.registry[cls] = instance
                 return instance
@@ -43,7 +43,7 @@ class Container(object):
         for registered_cls in reversed(self.registry):
             if issubclass(registered_cls, cls):
                 return self.resolve(registered_cls)
-        raise ValueError(f"No registration found for {cls}.")
+        raise DependencyResolveError(f"No registration found for {cls}.")
 
     def resolve_all_implementations(self, cls) -> list[object]:
         """
@@ -54,13 +54,46 @@ class Container(object):
             if issubclass(registered_cls, cls):
                 result.append(self.resolve(registered_cls))
         return result
+    
+    def validate(self):
+        graph = {}
+        for registered_cls, obj in self.registry.items():
+            if not callable(obj) or inspect.isfunction(obj):
+                graph[registered_cls.__name__] = []
+                continue
+            graph[registered_cls.__name__] = self._get_dependencies(obj, resolve=False)
+        for node in graph:
+            cycle = self._dfs(graph, node)
+            if cycle:
+                raise CyclicDependencyError(f"Founded cycle dependency in container")
             
-    def _resolve_dependencies(self, func):
+    
+    def _get_dependencies(self, func, resolve = True):
         parameters = inspect.signature(func).parameters
         dependencies = []
         for param in parameters.values():
             if param.annotation != inspect.Parameter.empty:
-                dependencies.append(self.resolve(param.annotation))
+                dependencies.append(self.resolve(param.annotation) if resolve else param.annotation.__name__)
             else:
-                raise ValueError(f"Cannot resolve dependency for parameter {param}.")
+                raise DependencyResolveError(f"Cannot resolve dependency for parameter {param}.")
         return dependencies
+
+    @staticmethod
+    def _dfs(graph, node):
+        visited = set()
+        stack = [node]
+        while stack:
+            current_node = stack.pop()
+            if current_node not in visited:
+                visited.add(current_node)
+            for neighbor in graph[current_node]:
+                if neighbor in visited and len(stack) != 0 and neighbor != stack[-1]:
+                    return True
+                stack.append(neighbor)
+        return False
+
+class CyclicDependencyError(Exception):
+    pass
+
+class DependencyResolveError(Exception):
+    pass

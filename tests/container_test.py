@@ -1,6 +1,9 @@
 import unittest
 from abc import ABC
-from simple_di_container.container import Container
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from simple_di_container.container import Container, CyclicDependencyError
 
 class ContainerTest(unittest.TestCase):
 
@@ -118,6 +121,59 @@ class ContainerTest(unittest.TestCase):
         actual = container.resolve(Container)
 
         self.assertEqual(actual, container)
+
+    def test_validate_container(self):
+        class DependencyA:
+            pass
+
+        class DependencyB:
+            def __init__(self, dependency_a : DependencyA):
+                pass
+        
+        class DependencyC:
+            def __init__(self, dependency_a : DependencyA, dependency_b: DependencyB) -> None:
+                pass
+
+        class MyClass:
+            def __init__(self, dependency_b : DependencyB, dependency_a: DependencyA, dependency_c: DependencyC):
+                pass
+        
+        def factory_c(container : Container):
+            dependency_a = container.resolve(DependencyA)
+            dependency_b = container.resolve(DependencyB)
+            return DependencyC(dependency_a, dependency_b)
+
+        container = Container()
+        container.register(DependencyA)
+        container.register(DependencyB)
+        container.register(MyClass)
+        container.register(DependencyC, factory=factory_c)
+
+        container.validate()
+        self.assertTrue(True)
+
+    def test_validate_container_when_cycle(self):
+        from cycled_dependency.dependency_a import DependencyA
+        from cycled_dependency.dependency_b import DependencyB
+        from cycled_dependency.dependency_c import DependencyC
+
+        class MyClass:
+            def __init__(self, dependency_b : DependencyB, dependency_a: DependencyA, dependency_c: DependencyC):
+                pass
+        
+        def factory_c(container : Container):
+            dependency_a = container.resolve(DependencyA)
+            dependency_b = container.resolve(DependencyB)
+            return DependencyC(dependency_a, dependency_b)
+
+        container = Container()
+        container.register(DependencyA)
+        container.register(DependencyB)
+        container.register(MyClass)
+        container.register(DependencyC, factory=factory_c)
+
+        with self.assertRaises(CyclicDependencyError):
+            container.validate()
 
 if __name__ == '__main__':
     unittest.main()
