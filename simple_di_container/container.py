@@ -6,17 +6,17 @@ class Container(object):
         self.registry = {}
         self.scopes = {}
         self.current_scope = None
-        self.registry[Container] = self
+        self.registry[Container] = {"type": "instance", "value": self, "scope": "singleton"}
 
     def register(self, cls, factory=None, instance=None, scope="singleton"):
         """
             Register object in container.
             Class Required!
-            Registrations: 
+            Registrations:
                 * Only by class  (when resolving class has been created and all dependencies resolved and injected to constructor)
                 * By class and factory method or lambda ( resolved by class and execute method for create instance. IF method or lambda has one argument, it will be executed with passing Container instance for resolve another classes)
                 * By class and instance. When resolving, return registered object
-            
+
             Scope options:
                 - "singleton": One instance per container (current behavior)
                 - "transient": New instance on every resolve
@@ -38,42 +38,42 @@ class Container(object):
         if cls in self.registry:
             registration = self.registry[cls]
             scope = registration["scope"]
-            
+
             # Handle scoped instances
             if scope == "scoped":
                 if self.current_scope is None:
-                    # If we're trying to resolve a scoped instance outside of any scope, 
+                    # If we're trying to resolve a scoped instance outside of any scope,
                     # we'll create a default scope named "default"
                     self.current_scope = "default"
-                
+
                 # Create a scope-specific registry if it doesn't exist
                 if self.current_scope not in self.scopes:
                     self.scopes[self.current_scope] = {}
-                
+
                 # Return existing instance in this scope or create new one
                 if cls in self.scopes[self.current_scope]:
                     return self.scopes[self.current_scope][cls]
-                
+
                 # Create new instance for this scope
                 instance = self._create_instance(registration)
                 self.scopes[self.current_scope][cls] = instance
                 return instance
-            
+
             elif scope == "transient":
                 # Always create a new instance
                 return self._create_instance(registration)
-            
+
             else:  # singleton
                 # Check if instance already exists
                 if cls in self.registry and isinstance(self.registry[cls], dict) and "instance" in self.registry[cls]:
                     return self.registry[cls]["instance"]
-                
+
                 # Create and store singleton instance
                 instance = self._create_instance(registration)
                 # Store the instance in the registry for singleton
                 self.registry[cls] = {"type": registration["type"], "value": registration["value"], "scope": registration["scope"], "instance": instance}
                 return instance
-                
+
         # Try to resolve base class implementations
         for registered_cls in reversed(self.registry):
             if issubclass(registered_cls, cls):
@@ -143,11 +143,11 @@ class Container(object):
             Resolve all implementations of base or abstract classes
         """
         result = []
-        for registered_cls in self.registry: 
+        for registered_cls in self.registry:
             if issubclass(registered_cls, cls):
                 result.append(self.resolve(registered_cls))
         return result
-            
+
     def _create_instance(self, registration):
         """Helper method to create instance based on registration type"""
         obj = registration["value"]
