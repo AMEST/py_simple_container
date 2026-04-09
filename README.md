@@ -1,7 +1,7 @@
 # Simple container
 
 ## Description 
-This simple DI container for Python provides a mechanism for resolving dependencies through a class constructor. It only supports one type of object lifetime - singleton.
+This simple DI container for Python provides a mechanism for resolving dependencies through a class constructor. It now supports multiple lifetime scopes.
 
 Registration is possible in three options:
 1) Only by class - then when resolving, all dependencies will be added to the constructor, which will also be resolved
@@ -17,6 +17,8 @@ Install latest: `pip install https://github.com/AMEST/py_simple_container/archiv
 * `register` - Register class (and optional factory or instance) to container
 * `resolve` - Get class instance from container and resolve dependencies (only for only class registration)
 * `resolve_all_implementations` - Resolve all instances who implement this class or abstract class
+* `create_scope` - Create new scope context for scoped instances
+* `destroy_scope` - Destroy scope and associated instances
 
 ## Usage
 
@@ -51,4 +53,30 @@ container.register(DependencyC, factory=factory_c)
 obj : MyClass = container.resolve(MyClass) # MyClass has dependency B. Inside Dependency B stored Dependency A
 obj2 : DependencyC = container.resolve(DependencyC) # Dependency C has dependency A.
 # Dependency A in Dependency B equals Dependency A in Dependency C. Because it's resolved inside container as singleton
+```
+
+## Lifetime Scopes
+
+The container now supports three lifetime scopes:
+
+1. **Singleton** (default): One instance per registration
+2. **Transient**: New instance on every resolve
+3. **Scoped**: One instance per scope context
+
+```python
+container.register(Database)                    # singleton (default)
+container.register(Service, scope="transient")  # transient scope
+container.register(Controller, scope="scoped")  # scoped scope
+
+# Scoped instances are created per scope
+container.create_scope("request1")
+ctrl1 = container.resolve(Controller)  # Instance created in scope "request1"
+ctrl2 = container.resolve(Controller)  # Same instance as ctrl1
+
+# Different scope = different instance
+container.create_scope("request2")
+ctrl3 = container.resolve(Controller)  # Different instance
+
+# Destroy scope to free resources
+container.destroy_scope("request1")
 ```
