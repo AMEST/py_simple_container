@@ -2,7 +2,7 @@ import unittest
 from abc import ABC
 from simple_di_container.container import Container
 
-class ContainerTest(unittest.TestCase):
+class ContainerTests(unittest.TestCase):
 
     def test_class_registration(self):
         class AbstractClass:
@@ -57,7 +57,7 @@ class ContainerTest(unittest.TestCase):
         class DependencyB:
             def __init__(self, dependency_a : DependencyA):
                 self.dependency_a = dependency_a
-        
+
         class DependencyC:
             def __init__(self, dependency_a : DependencyA) -> None:
                 self.dependency_a = dependency_a
@@ -109,7 +109,7 @@ class ContainerTest(unittest.TestCase):
         container.register(ImplementationThree)
 
         actual = container.resolve_all_implementations(MyInterface)
-        
+
         self.assertTrue(len(actual), 3)
 
     def test_resolve_container(self):
@@ -118,3 +118,6 @@ class ContainerTest(unittest.TestCase):
         actual = container.resolve(Container)
 
         self.assertEqual(actual, container)
+
+if __name__ == '__main__':
+    unittest.main()
